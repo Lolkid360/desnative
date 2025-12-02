@@ -36,7 +36,7 @@ const TitleBar: React.FC = () => {
     return (
         <>
             <div
-                className="h-[32px] w-full flex items-center justify-between border-b select-none"
+                className="h-[32px] w-full flex items-center justify-between border-b select-none flex-shrink-0"
                 style={{
                     '--wails-draggable': 'drag',
                     backgroundColor: 'var(--bg-titlebar)',

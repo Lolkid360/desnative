@@ -44,6 +44,15 @@ const Display: React.FC<DisplayProps> = ({
       mf.smartSuperscript = true;
       mf.virtualKeyboardMode = 'manual'; // Disable built-in virtual keyboard
 
+      // Custom Shortcuts
+      mf.inlineShortcuts = {
+        ING: '\\int_{}^{}',
+        ing: '\\int',
+        DIR: '\\frac{d}{dx}',
+        SIMP: 'simplify(',
+        FACT: 'factor('
+      };
+
       // Bind input event
       const handleInput = () => {
         onInput();
@@ -98,10 +107,11 @@ const Display: React.FC<DisplayProps> = ({
   }, []);
 
   return (
-    <div className="flex-1 overflow-y-auto border-b p-0 display-scrollbar" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }} onClick={() => mathFieldRef.current?.focus()}>
-      <div className="flex flex-col min-h-full">
-        {/* Spacer to push content to bottom if not full */}
-        <div className="flex-1" />
+    <div className="flex-1 flex flex-col border-b min-h-0" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+      {/* History Area - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-0 display-scrollbar" onClick={() => mathFieldRef.current?.focus()}>
+        {/* Spacer to push content to bottom when few items */}
+        <div className="min-h-0" style={{ flexGrow: history.length < 5 ? 1 : 0 }} />
 
         {/* History Items */}
         {history.map((item) => (
@@ -157,15 +167,13 @@ const Display: React.FC<DisplayProps> = ({
                     Error
                   </span>
                 ) : (
-                  <span
-                    className="text-2xl font-bold px-2 py-1 rounded border"
+                  <div
+                    className="text-2xl font-bold px-2 py-1 rounded border flex items-center"
                     style={{
                       color: 'var(--text-primary)',
                       backgroundColor: 'var(--bg-secondary)',
                       borderColor: 'transparent',
-                      whiteSpace: 'nowrap',
                       cursor: 'pointer',
-                      userSelect: 'text'
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-primary)'}
                     onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
@@ -179,31 +187,54 @@ const Display: React.FC<DisplayProps> = ({
                     }}
                     title="Click to insert, Right-click to copy"
                   >
-                    = {item.result}
-                  </span>
+                    <span className="mr-2">=</span>
+                    <MathField
+                      read-only
+                      style={{
+                        pointerEvents: 'none',
+                        fontSize: '1.5rem',
+                        fontWeight: 'bold',
+                        color: 'var(--text-primary)'
+                      }}
+                    >
+                      {item.result}
+                    </MathField>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         ))}
-
-        {/* Current Input */}
-        <div className="flex flex-col border-l-4 min-h-[100px] relative shadow-sm" style={{ borderColor: '#2f72dc', backgroundColor: 'var(--bg-secondary)' }}>
-          <div className="flex-1 px-4 py-4 flex items-center">
-            <MathField
-              ref={mathFieldRef}
-              virtual-keyboard-mode="manual"
-            >
-            </MathField>
-          </div>
-          {/* Live Preview Result */}
-          <div className="px-4 py-2 text-right min-h-[40px]">
-            {currentResult && (
-              <span className="text-xl font-normal" style={{ color: 'var(--text-secondary)' }}>= {currentResult}</span>
-            )}
-          </div>
-        </div>
         <div ref={bottomRef} />
+      </div>
+
+      {/* Current Input - Fixed at Bottom */}
+      <div className="flex flex-col border-l-4 min-h-[100px] relative shadow-sm flex-shrink-0" style={{ borderColor: '#2f72dc', backgroundColor: 'var(--bg-secondary)' }}>
+        <div className="flex-1 px-4 py-4 flex items-center">
+          <MathField
+            ref={mathFieldRef}
+            virtual-keyboard-mode="manual"
+          >
+          </MathField>
+        </div>
+        {/* Live Preview Result */}
+        <div className="px-4 py-2 text-right min-h-[40px] flex justify-end items-center">
+          {currentResult && (
+            <>
+              <span className="text-xl font-normal mr-2" style={{ color: 'var(--text-secondary)' }}>=</span>
+              <MathField
+                read-only
+                style={{
+                  pointerEvents: 'none',
+                  fontSize: '1.2rem',
+                  color: 'var(--text-secondary)'
+                }}
+              >
+                {currentResult}
+              </MathField>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,9 @@
 import { create, all } from 'mathjs';
 import { AngleMode } from '../types';
+import nerdamer from 'nerdamer';
+import 'nerdamer/Algebra';
+import 'nerdamer/Calculus';
+import 'nerdamer/Solve';
 
 const math = create(all);
 
@@ -7,7 +11,12 @@ const math = create(all);
 // Default configuration (number: 'number') is used to avoid type errors with mixed types (Fraction/BigNumber)
 // and to ensure decimal output as requested by user.
 
-export const evaluateExpression = (latex: string, angleMode: AngleMode, previousAnswer: string = "0"): string | null => {
+export const evaluateExpression = (
+    latex: string,
+    angleMode: AngleMode,
+    previousAnswer: string = "0",
+    outputFormat: 'decimal' | 'fraction' = 'decimal'
+): string | null => {
     if (!latex || !latex.trim()) return null;
 
     let exprToEval = latex;
@@ -56,7 +65,34 @@ export const evaluateExpression = (latex: string, angleMode: AngleMode, previous
         .replace(/\\log/g, 'log')
         .replace(/\\ln/g, 'ln')
         .replace(/\\left/g, '') // Remove \left
-        .replace(/\\right/g, ''); // Remove \right
+        .replace(/\\right/g, '') // Remove \right
+        // Handle unbraced fractions/roots (e.g. \frac25 -> (2)/(5), \sqrt2 -> sqrt(2))
+        .replace(/\\frac(\d)(\d)/g, '($1)/($2)')
+        .replace(/\\frac(\d)\{([^}]+)\}/g, '($1)/($2)')
+        .replace(/\\frac\{([^}]+)\}(\d)/g, '($1)/($2)')
+        .replace(/\\sqrt(\d)/g, 'sqrt($1)')
+
+        // Calculus & Algebra
+        // Simplify/Factor
+        .replace(/simplify\(/g, 'simplify(')
+        .replace(/factor\(/g, 'factor(');
+
+    // Handle Calculus: Integrals and Derivatives
+    // We do this before other replacements to capture the structure
+
+    // Definite Integral: \int_{a}^{b} f(x) dx
+    // Regex allows for optional spaces, \mathrm{d}, and various spacers (\, \: \;)
+    exprToEval = exprToEval.replace(/\\int_\{([^}]+)\}\^\{([^}]+)\}\s*(.+?)\s*(?:\\,|\\:|\\;|\\s)*\\?(?:mathrm\{)?d\}?([a-z])/g, 'defint($3, $1, $2)');
+
+    // Indefinite Integral: \int f(x) dx
+    exprToEval = exprToEval.replace(/\\int\s*(.+?)\s*(?:\\,|\\:|\\;|\\s)*\\?(?:mathrm\{)?d\}?([a-z])/g, 'integrate($1)');
+
+    // Derivative: \frac{d}{dx} f(x) or \frac{d}{dx}(f(x))
+    // Handles \frac{d}{dx}, \frac{\mathrm{d}}{\mathrm{d}x}, spaces, etc.
+    const derivRegex = /\\frac\s*\{\s*\\?(?:mathrm\{)?d\}?\s*\}\s*\{\s*\\?(?:mathrm\{)?d\}?\s*([a-z])\s*\}\s*/g;
+
+    exprToEval = exprToEval.replace(new RegExp(derivRegex.source + '\\((.+?)\\)', 'g'), 'diff($2, $1)'); // with parens
+    exprToEval = exprToEval.replace(new RegExp(derivRegex.source + '(.+)', 'g'), 'diff($2, $1)'); // without parens
 
     // 2. Handle 'Ans'
     exprToEval = exprToEval.replace(/Ans/gi, `(${previousAnswer})`);
@@ -133,6 +169,94 @@ export const evaluateExpression = (latex: string, angleMode: AngleMode, previous
     exprToEval = exprToEval.replace(/(\d)\(/g, '$1*(');
     exprToEval = exprToEval.replace(/\)(\d)/g, ')*$1');
 
+    // Fix decimals starting with dot (e.g. .2 -> 0.2)
+    exprToEval = exprToEval.replace(/(^|[^\d])\.(\d+)/g, '$10.$2');
+
+    // 5. Equation Solving & Calculus (nerdamer)
+    // Check if it's an equation (=) OR contains calculus/algebra functions
+    const isCalculusOrAlgebra = /defint|integrate|diff|simplify|factor/.test(exprToEval);
+
+    if (exprToEval.indexOf('=') !== -1 || isCalculusOrAlgebra) {
+        try {
+            // If we have a substitution, apply it first using nerdamer
+            let exprToSolve = exprToEval;
+            if (subVar && subVal !== null) {
+                exprToSolve = nerdamer(exprToSolve).sub(subVar, subVal.toString()).toString();
+            }
+
+            // If it's just a calculus/algebra expression (no =), evaluate it
+            if (exprToEval.indexOf('=') === -1) {
+                const result = nerdamer(exprToSolve).evaluate();
+                const text = result.text();
+
+                // For fraction mode, always return LaTeX
+                if (outputFormat === 'fraction') {
+                    return result.toTeX();
+                }
+
+                // For decimal mode, try to format if it's a number
+                try {
+                    const num = math.evaluate(text);
+                    if (typeof num === 'number' && !isNaN(num)) {
+                        return formatNumber(num);
+                    }
+                } catch (e) {
+                    // Not a number
+                }
+
+                // If not a number, return LaTeX
+                return result.toTeX();
+            }
+
+            // Equation Solving Logic
+            // Find variables
+            const vars = nerdamer(exprToSolve).variables();
+
+            if (vars.length === 1) {
+                const variable = vars[0];
+                const solution = (nerdamer as any).solve(exprToSolve, variable);
+
+                // Format the solution(s)
+                // solution is usually a string representation of a list like [1, 2]
+                const solStr = solution.toString();
+
+                // Parse the solution string to get individual values
+                // It usually comes as "[val1, val2]"
+                const cleanSol = solStr.replace(/^\[|\]$/g, '');
+                const parts = cleanSol.split(',');
+
+                const formattedParts = parts.map(part => {
+                    try {
+                        // Evaluate to decimal
+                        const num = math.evaluate(part);
+                        return formatNumber(Number(num));
+                    } catch (e) {
+                        return part;
+                    }
+                });
+
+                // Deduplicate results
+                const uniqueParts = [...new Set(formattedParts)];
+
+                return uniqueParts.map(val => `${variable} = ${val}`).join(', ');
+            } else if (vars.length === 0) {
+                // Evaluate truthiness (e.g. 10=10)
+                // nerdamer evaluate might return boolean
+                try {
+                    const result = nerdamer(exprToSolve).evaluate().text();
+                    return result;
+                } catch (e) {
+                    return "False"; // Fallback
+                }
+            } else {
+                return "Error: Too many variables";
+            }
+        } catch (error: any) {
+            console.error("Solver error:", error);
+            return "Error: Could not solve";
+        }
+    }
+
     // Define the scope
     const scope: any = {
         ln: math.log,
@@ -175,6 +299,16 @@ export const evaluateExpression = (latex: string, angleMode: AngleMode, previous
 
         // Format output
         if (typeof result === 'number') {
+            // If fraction mode, try to convert to LaTeX fraction using nerdamer
+            if (outputFormat === 'fraction') {
+                try {
+                    const fractionLatex = nerdamer(result.toString()).toTeX();
+                    return fractionLatex;
+                } catch (e) {
+                    // Fallback to decimal
+                    return formatNumber(result);
+                }
+            }
             return formatNumber(result);
         } else if (typeof result === 'object') {
             // Handle Units, Complex numbers, etc.
@@ -187,6 +321,15 @@ export const evaluateExpression = (latex: string, angleMode: AngleMode, previous
                 // Try to see if it converts to a simple number
                 const num = Number(str);
                 if (!isNaN(num)) {
+                    // If fraction mode, try to convert to LaTeX fraction
+                    if (outputFormat === 'fraction') {
+                        try {
+                            const fractionLatex = nerdamer(num.toString()).toTeX();
+                            return fractionLatex;
+                        } catch (e) {
+                            return formatNumber(num);
+                        }
+                    }
                     return formatNumber(num);
                 }
                 return str;

@@ -83,27 +83,41 @@ const Keypad: React.FC<KeypadProps> = ({ tab, onCommand }) => {
     );
 
     const renderFuncLayout = () => (
-        <div className="w-full h-full grid grid-cols-4 grid-rows-4 gap-1 p-1" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-            {/* Trig */}
-            <Button label="sin" onClick={ins('\\sin')} />
-            <Button label="cos" onClick={ins('\\cos')} />
-            <Button label="tan" onClick={ins('\\tan')} />
-            <Button label="arcsin" onClick={ins('\\arcsin')} display={<>sin<sup className="text-xs">-1</sup></>} />
+        <div className="w-full h-full overflow-y-auto p-1 display-scrollbar" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+            <div className="grid grid-cols-4 gap-1 pb-1">
+                {/* Calculus */}
+                <Button label="∫" onClick={ins('\\int')} className="font-serif italic" />
+                <Button label="∫a^b" onClick={ins('\\int_{}^{}')} className="text-xs" />
+                <Button label="d/dx" onClick={ins('\\frac{d}{dx}')} className="text-xs" />
+                <Button label="sum" onClick={ins('\\sum')} className="text-xs" />
 
-            <Button label="arccos" onClick={ins('\\arccos')} display={<>cos<sup className="text-xs">-1</sup></>} />
-            <Button label="arctan" onClick={ins('\\arctan')} display={<>tan<sup className="text-xs">-1</sup></>} />
-            <Button label="mean" onClick={ins('mean(')} />
-            <Button label="stdev" onClick={ins('std(')} />
+                {/* Algebra */}
+                <Button label="simp" onClick={ins('simplify(')} className="text-xs" title="Simplify" />
+                <Button label="fact" onClick={ins('factor(')} className="text-xs" title="Factor" />
+                <Button label="solve" onClick={ins('solve(')} className="text-xs" />
+                <Button label="root" onClick={ins('roots(')} className="text-xs" />
 
-            <Button label="nPr" onClick={ins('nPr')} />
-            <Button label="nCr" onClick={ins('nCr')} />
-            <Button label="!" onClick={ins('!')} />
-            <Button label="log" onClick={ins('\\log')} />
+                {/* Trig */}
+                <Button label="sin" onClick={ins('\\sin')} />
+                <Button label="cos" onClick={ins('\\cos')} />
+                <Button label="tan" onClick={ins('\\tan')} />
+                <Button label="asin" onClick={ins('\\arcsin')} display={<>sin<sup className="text-xs">-1</sup></>} />
 
-            <Button label="ln" onClick={ins('\\ln')} />
-            <Button label="e" onClick={ins('e')} />
-            <Button label="min" onClick={ins('min(')} />
-            <Button label="max" onClick={ins('max(')} />
+                <Button label="acos" onClick={ins('\\arccos')} display={<>cos<sup className="text-xs">-1</sup></>} />
+                <Button label="atan" onClick={ins('\\arctan')} display={<>tan<sup className="text-xs">-1</sup></>} />
+                <Button label="mean" onClick={ins('mean(')} />
+                <Button label="stdev" onClick={ins('std(')} />
+
+                <Button label="nPr" onClick={ins('nPr')} />
+                <Button label="nCr" onClick={ins('nCr')} />
+                <Button label="!" onClick={ins('!')} />
+                <Button label="log" onClick={ins('\\log')} />
+
+                <Button label="ln" onClick={ins('\\ln')} />
+                <Button label="e" onClick={ins('e')} />
+                <Button label="min" onClick={ins('min(')} />
+                <Button label="max" onClick={ins('max(')} />
+            </div>
         </div>
     );
 
