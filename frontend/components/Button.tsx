@@ -9,6 +9,7 @@ interface ButtonProps {
   className?: string;
   disabled?: boolean;
   style?: React.CSSProperties;
+  title?: string;
   onMouseEnter?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onMouseLeave?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
@@ -21,6 +22,7 @@ const Button: React.FC<ButtonProps> = ({
   className = "",
   disabled = false,
   style = {},
+  title,
   onMouseEnter,
   onMouseLeave
 }) => {
@@ -82,6 +84,7 @@ const Button: React.FC<ButtonProps> = ({
       onMouseLeave={onMouseLeave}
       className={`${baseClasses} ${variantClasses} ${className}`}
       style={{ ...variantStyles, ...style }}
+      title={title}
       aria-label={label}
     >
       {display || label}

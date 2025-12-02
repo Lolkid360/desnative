@@ -178,8 +178,11 @@ export const evaluateExpression = (
 
     if (exprToEval.indexOf('=') !== -1 || isCalculusOrAlgebra) {
         try {
+            // Convert nthRoot to power notation for nerdamer compatibility
+            // nthRoot(x, n) -> x^(1/n)
+            let exprToSolve = exprToEval.replace(/nthRoot\(([^,]+),\s*(\d+)\)/g, '($1)^(1/$2)');
+
             // If we have a substitution, apply it first using nerdamer
-            let exprToSolve = exprToEval;
             if (subVar && subVal !== null) {
                 exprToSolve = nerdamer(exprToSolve).sub(subVar, subVal.toString()).toString();
             }

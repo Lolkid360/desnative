@@ -1,5 +1,6 @@
 import React from 'react';
 import Button from './Button';
+import Tooltip from './Tooltip';
 import { ButtonVariant, TabMode } from '../types';
 
 interface KeypadProps {
@@ -86,37 +87,85 @@ const Keypad: React.FC<KeypadProps> = ({ tab, onCommand }) => {
         <div className="w-full h-full overflow-y-auto p-1 display-scrollbar" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
             <div className="grid grid-cols-4 gap-1 pb-1">
                 {/* Calculus */}
-                <Button label="∫" onClick={ins('\\int')} className="font-serif italic" />
-                <Button label="∫a^b" onClick={ins('\\int_{}^{}')} className="text-xs" />
-                <Button label="d/dx" onClick={ins('\\frac{d}{dx}')} className="text-xs" />
-                <Button label="sum" onClick={ins('\\sum')} className="text-xs" />
+                <Tooltip title="Integral" description="Indefinite integral" example="∫ x^2 dx">
+                    <Button label="∫" onClick={ins('\\int')} className="font-serif italic" />
+                </Tooltip>
+                <Tooltip title="Definite Integral" description="Integral with bounds" example="∫₀² x^2 dx">
+                    <Button label="∫a^b" onClick={ins('\\int_{}^{}')} className="text-xs" />
+                </Tooltip>
+                <Tooltip title="Derivative" description="Derivative with respect to x" example="d/dx (x^2)">
+                    <Button label="d/dx" onClick={ins('\\frac{d}{dx}')} className="text-xs" />
+                </Tooltip>
+                <Tooltip title="Summation" description="Sum notation" example="Σ (n=1 to 10) n">
+                    <Button label="sum" onClick={ins('\\sum')} className="text-xs" />
+                </Tooltip>
 
                 {/* Algebra */}
-                <Button label="simp" onClick={ins('simplify(')} className="text-xs" title="Simplify" />
-                <Button label="fact" onClick={ins('factor(')} className="text-xs" title="Factor" />
-                <Button label="solve" onClick={ins('solve(')} className="text-xs" />
-                <Button label="root" onClick={ins('roots(')} className="text-xs" />
+                <Tooltip title="Simplify" description="Simplify algebraic expression" example="simplify(x^2 + 2*x + 1)">
+                    <Button label="simp" onClick={ins('simplify(')} className="text-xs" title="Simplify" />
+                </Tooltip>
+                <Tooltip title="Factor" description="Factor algebraic expression" example="factor(x^2 - 4)">
+                    <Button label="fact" onClick={ins('factor(')} className="text-xs" title="Factor" />
+                </Tooltip>
+                <Tooltip title="Solve" description="Solve equation for variable" example="x^2 - 4 = 0">
+                    <Button label="solve" onClick={ins('solve(')} className="text-xs" />
+                </Tooltip>
+                <Tooltip title="Roots" description="Find polynomial roots" example="roots(x^2 + 3*x + 2)">
+                    <Button label="root" onClick={ins('roots(')} className="text-xs" />
+                </Tooltip>
 
                 {/* Trig */}
-                <Button label="sin" onClick={ins('\\sin')} />
-                <Button label="cos" onClick={ins('\\cos')} />
-                <Button label="tan" onClick={ins('\\tan')} />
-                <Button label="asin" onClick={ins('\\arcsin')} display={<>sin<sup className="text-xs">-1</sup></>} />
+                <Tooltip title="Sine" description="Sine function" example="sin(45)">
+                    <Button label="sin" onClick={ins('\\sin')} />
+                </Tooltip>
+                <Tooltip title="Cosine" description="Cosine function" example="cos(60)">
+                    <Button label="cos" onClick={ins('\\cos')} />
+                </Tooltip>
+                <Tooltip title="Tangent" description="Tangent function" example="tan(30)">
+                    <Button label="tan" onClick={ins('\\tan')} />
+                </Tooltip>
+                <Tooltip title="Arcsine" description="Inverse sine (sin⁻¹)" example="arcsin(0.5)">
+                    <Button label="asin" onClick={ins('\\arcsin')} display={<>sin<sup className="text-xs">-1</sup></>} />
+                </Tooltip>
 
-                <Button label="acos" onClick={ins('\\arccos')} display={<>cos<sup className="text-xs">-1</sup></>} />
-                <Button label="atan" onClick={ins('\\arctan')} display={<>tan<sup className="text-xs">-1</sup></>} />
-                <Button label="mean" onClick={ins('mean(')} />
-                <Button label="stdev" onClick={ins('std(')} />
+                <Tooltip title="Arccosine" description="Inverse cosine (cos⁻¹)" example="arccos(0.5)">
+                    <Button label="acos" onClick={ins('\\arccos')} display={<>cos<sup className="text-xs">-1</sup></>} />
+                </Tooltip>
+                <Tooltip title="Arctangent" description="Inverse tangent (tan⁻¹)" example="arctan(1)">
+                    <Button label="atan" onClick={ins('\\arctan')} display={<>tan<sup className="text-xs">-1</sup></>} />
+                </Tooltip>
+                <Tooltip title="Mean" description="Average of values" example="mean(1, 2, 3, 4, 5)">
+                    <Button label="mean" onClick={ins('mean(')} />
+                </Tooltip>
+                <Tooltip title="Standard Deviation" description="Population standard deviation" example="std(1, 2, 3, 4, 5)">
+                    <Button label="stdev" onClick={ins('std(')} />
+                </Tooltip>
 
-                <Button label="nPr" onClick={ins('nPr')} />
-                <Button label="nCr" onClick={ins('nCr')} />
-                <Button label="!" onClick={ins('!')} />
-                <Button label="log" onClick={ins('\\log')} />
+                <Tooltip title="Permutation" description="Number of ordered arrangements" example="5 nPr 3 = 60">
+                    <Button label="nPr" onClick={ins('nPr')} />
+                </Tooltip>
+                <Tooltip title="Combination" description="Number of unordered selections" example="5 nCr 3 = 10">
+                    <Button label="nCr" onClick={ins('nCr')} />
+                </Tooltip>
+                <Tooltip title="Factorial" description="Product of all positive integers ≤ n" example="5! = 120">
+                    <Button label="!" onClick={ins('!')} />
+                </Tooltip>
+                <Tooltip title="Logarithm" description="Base-10 logarithm" example="log(100) = 2">
+                    <Button label="log" onClick={ins('\\log')} />
+                </Tooltip>
 
-                <Button label="ln" onClick={ins('\\ln')} />
-                <Button label="e" onClick={ins('e')} />
-                <Button label="min" onClick={ins('min(')} />
-                <Button label="max" onClick={ins('max(')} />
+                <Tooltip title="Natural Logarithm" description="Base-e logarithm (ln)" example="ln(e) = 1">
+                    <Button label="ln" onClick={ins('\\ln')} />
+                </Tooltip>
+                <Tooltip title="Euler's Number" description="Mathematical constant e ≈ 2.718" example="e^1 = 2.718">
+                    <Button label="e" onClick={ins('e')} />
+                </Tooltip>
+                <Tooltip title="Minimum" description="Smallest value from a list" example="min(3, 1, 4, 2)">
+                    <Button label="min" onClick={ins('min(')} />
+                </Tooltip>
+                <Tooltip title="Maximum" description="Largest value from a list" example="max(3, 1, 4, 2)">
+                    <Button label="max" onClick={ins('max(')} />
+                </Tooltip>
             </div>
         </div>
     );
