@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Source Sans 3', sans-serif;
+  user-select: none;
+  cursor: default;
+
+  /* Light theme colors */
+  --bg-primary: #f3f4f6;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f0f0;
+  --bg-titlebar: #e5e7eb;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-primary: #d1d5db;
+  --border-secondary: #e5e7eb;
+  --button-hover: #e5e7eb;
+  --button-active: #e0e0e0;
+  --button-active-text: #000000;
+  --button-inactive-text: #6b7280;
+  --angle-toggle-bg: #e5e7eb;
+  --angle-toggle-active: #ffffff;
+  --operation-button-bg: #e8e8e8;
+  --operation-button-text: #374151;
+}
+
+:root.dark {
+  /* Dark theme colors */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-titlebar: #0f172a;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-primary: #475569;
+  --border-secondary: #334155;
+  --button-hover: #475569;
+  --button-active: #475569;
+  --button-active-text: #f1f5f9;
+  --button-inactive-text: #64748b;
+  --angle-toggle-bg: #1e293b;
+  --angle-toggle-active: #334155;
+  --operation-button-bg: #475569;
+  --operation-button-text: #e2e8f0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Input fields should allow selection */
+input,
+textarea,
+math-field {
+  user-select: text;
+  cursor: text;
+}
+
+/* Display area scrollbar - more visible */
+.display-scrollbar::-webkit-scrollbar {
+  width: 12px;
+}
+
+.display-scrollbar::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 0;
+}
+
+.display-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 6px;
+  border: 2px solid var(--bg-tertiary);
+}
+
+.display-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* History item horizontal scrollbar - slim and themed */
+.history-item-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-primary) var(--bg-secondary);
+}
+
+.history-item-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.history-item-scroll::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+.history-item-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
+}
+
+.history-item-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Allow text selection in specific areas */
+.select-text {
+  user-select: text !important;
+  cursor: text;
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Desmos Clone",
+  "description": "A high-fidelity clone of the Desmos Scientific Calculator featuring math evaluation, history, and a responsive keypad UI.",
+  "requestFramePermissions": []
+}
