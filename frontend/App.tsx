@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Display from './components/Display';
 import Keypad from './components/Keypad';
 import Button from './components/Button';
@@ -7,8 +7,12 @@ import { evaluateExpression } from './services/mathService';
 import { RotateCcw, ArrowLeft, Settings } from 'lucide-react';
 import TitleBar from './components/TitleBar';
 import { useTheme } from './contexts/ThemeContext';
-import SettingsModal from './components/SettingsModal';
-import UpdateModal from './components/UpdateModal';
+// import SettingsModal from './components/SettingsModal'; // Removed for lazy loading
+// import UpdateModal from './components/UpdateModal'; // Removed for lazy loading
+
+// Lazy load modals
+const SettingsModal = React.lazy(() => import('./components/SettingsModal'));
+const UpdateModal = React.lazy(() => import('./components/UpdateModal'));
 
 interface UpdateInfo {
     available: boolean;
@@ -45,6 +49,19 @@ const App: React.FC = () => {
         if (storedCheck !== null) {
             setCheckForUpdates(JSON.parse(storedCheck));
         }
+
+        // Aggressive auto-focus
+        const focusInterval = setInterval(() => {
+            if (mathFieldRef.current) {
+                mathFieldRef.current.focus();
+                // console.log("Attempting focus...");
+            }
+        }, 100);
+
+        // Stop attempting after 2 seconds
+        setTimeout(() => {
+            clearInterval(focusInterval);
+        }, 2000);
     }, []);
 
     // Check for updates on mount (every time)
