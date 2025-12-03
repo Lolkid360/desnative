@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desnative Calculator - A Better Calculator for Windows</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #4a5568;
+            font-size: 1.3rem;
+            text-align: center;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        .description {
+            color: #2d3748;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .features {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .features h2 {
+            color: #2d3748;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features li {
+            color: #4a5568;
+            font-size: 1.05rem;
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .download-section {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .version-info {
+            text-align: center;
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+
+        .github-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .github-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .github-link a:hover {
+            color: #764ba2;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 30px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Desnative Calculator</h1>
+        <p class="subtitle">Because the Windows Calculator... well, it sucks.</p>
+
+        <p class="description">
+            <strong>Desnative Calculator</strong> is a powerful, modern scientific calculator built from scratch to
+            replace the lackluster Windows Calculator.
+            Tired of the clunky interface and limited functionality? This calculator was designed with one goal in mind:
+            to be the calculator you actually want to use.
+        </p>
+
+        <div class="features">
+            <h2>Why Choose Desnative?</h2>
+            <ul>
+                <li>Beautiful, dark mode interface that doesn't hurt your eyes</li>
+                <li>Advanced scientific functions (derivatives, integrals, algebra)</li>
+                <li>LaTeX-style math input with live preview</li>
+                <li>Comprehensive calculation history</li>
+                <li>Fast, native Windows application</li>
+                <li>Free and open-source</li>
+                <li>Auto-update system to always get the latest features</li>
+            </ul>
+        </div>
+
+        <p class="description">
+            Built with modern technologies (Wails, React, TypeScript, and Go), Desnative Calculator delivers the
+            performance and features
+            that Windows Calculator failed to provide. Say goodbye to frustrating calculations and hello to a calculator
+            that actually works the way you think.
+        </p>
+
+        <div class="download-section">
+            <a href="build/bin/desnative.exe" class="download-btn" download>
+                Download for Windows
+            </a>
+            <p class="version-info" id="version-info">Latest Version</p>
+        </div>
+
+        <div class="github-link">
+            <a href="https://github.com/Lolkid360/desnative" target="_blank">View on GitHub →</a>
+        </div>
+    </div>
+
+    <script>
+        // Fetch and display version info
+        fetch('version.json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('version-info').textContent = `Version ${data.version} • ${data.releaseNotes}`;
+            })
+            .catch(err => {
+                console.error('Failed to load version info:', err);
+            });
+    </script>
+</body>
+
+</html>
