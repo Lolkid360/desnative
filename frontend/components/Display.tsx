@@ -30,8 +30,12 @@ const Display: React.FC<DisplayProps> = ({
 
   // Scroll to bottom when history updates
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (containerRef.current) {
+      const container = containerRef.current;
+      // Use setTimeout to allow render to finish
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+      }, 0);
     }
   }, [history]);
 
@@ -109,7 +113,11 @@ const Display: React.FC<DisplayProps> = ({
   return (
     <div className="flex-1 flex flex-col border-b min-h-0" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
       {/* History Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-0 display-scrollbar" onClick={() => mathFieldRef.current?.focus()}>
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto p-0 display-scrollbar"
+        onClick={() => mathFieldRef.current?.focus()}
+      >
         {/* Spacer to push content to bottom when few items */}
         <div className="min-h-0" style={{ flexGrow: history.length < 5 ? 1 : 0 }} />
 
