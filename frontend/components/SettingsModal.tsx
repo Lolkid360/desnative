@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sun, Moon, Monitor, X } from 'lucide-react';
 import Button from './Button';
 import { ButtonVariant } from '../types';
@@ -28,6 +28,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     checkForUpdates,
     onCheckForUpdatesChange
 }) => {
+    const [version, setVersion] = useState<string>("");
+
+    useEffect(() => {
+        if (isOpen) {
+            const getVersion = async () => {
+                try {
+                    const v = await (window as any).go?.main?.App?.GetAppVersion();
+                    setVersion(v || "Unknown");
+                } catch (e) {
+                    console.error("Failed to get app version:", e);
+                }
+            };
+            getVersion();
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (
@@ -146,7 +162,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Updates */}
-                <div>
+                <div className="mb-6">
                     <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                         Updates
                     </label>
@@ -159,6 +175,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             className="w-4 h-4"
                         />
                     </div>
+                </div>
+
+                {/* Version Info */}
+                <div className="text-center text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    Version {version}
                 </div>
             </div>
         </div>
