@@ -48,6 +48,13 @@ const Display: React.FC<DisplayProps> = ({
       mf.smartSuperscript = true;
       mf.virtualKeyboardMode = 'manual'; // Disable built-in virtual keyboard
 
+      // Disable context menu (it has styling/positioning issues)
+      mf.mathModeSpace = '\\:';
+      mf.addEventListener('contextmenu', (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
       // Custom Shortcuts
       mf.inlineShortcuts = {
         ING: '\\int_{}^{}',
