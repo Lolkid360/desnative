@@ -4,7 +4,7 @@ import {main} from '../models';
 
 export function CheckForUpdates(arg1:string):Promise<main.UpdateInfo>;
 
-export function DownloadUpdate(arg1:string):Promise<string>;
+export function DownloadUpdate(arg1:string):Promise<void>;
 
 export function ExportHistory(arg1:string):Promise<void>;
 

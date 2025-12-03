@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -197,41 +196,9 @@ func (a *App) CheckForUpdates(url string) (UpdateInfo, error) {
 	return info, nil
 }
 
-// DownloadUpdate downloads the update file to the user's Downloads folder
-func (a *App) DownloadUpdate(url string) (string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Get Downloads folder
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	downloadsDir := filepath.Join(homeDir, "Downloads")
-
-	// Create file
-	filename := filepath.Base(url)
-	// Ensure unique filename
-	destPath := filepath.Join(downloadsDir, filename)
-
-	out, err := os.Create(destPath)
-	if err != nil {
-		return "", err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return destPath, nil
+// DownloadUpdate opens the download URL in the user's default browser
+func (a *App) DownloadUpdate(url string) error {
+	runtime.BrowserOpenURL(a.ctx, url)
+	return nil
 }
-
-
-
-
 
