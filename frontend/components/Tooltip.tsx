@@ -15,6 +15,9 @@ const Tooltip: React.FC<TooltipProps> = ({ title, description, example, children
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    const [shift, setShift] = useState(0);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+
     const updatePosition = () => {
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
@@ -30,11 +33,10 @@ const Tooltip: React.FC<TooltipProps> = ({ title, description, example, children
             const left = rect.left + rect.width / 2;
 
             // Position vertically
-            // If top: place above the element (rect.top)
-            // If bottom: place below the element (rect.bottom)
             const top = newPosition === 'top' ? rect.top : rect.bottom;
 
             setCoords({ top, left });
+            setShift(0); // Reset shift
         }
     };
 
@@ -51,6 +53,25 @@ const Tooltip: React.FC<TooltipProps> = ({ title, description, example, children
         }
         setIsVisible(false);
     };
+
+    // Clamp position after render
+    React.useLayoutEffect(() => {
+        if (isVisible && tooltipRef.current) {
+            const rect = tooltipRef.current.getBoundingClientRect();
+            const padding = 10; // Keep 10px from edge
+
+            let newShift = 0;
+            if (rect.left < padding) {
+                newShift = padding - rect.left;
+            } else if (rect.right > window.innerWidth - padding) {
+                newShift = (window.innerWidth - padding) - rect.right;
+            }
+
+            if (newShift !== 0) {
+                setShift(prev => prev + newShift);
+            }
+        }
+    }, [isVisible]);
 
     useEffect(() => {
         // Update position on scroll or resize while visible
@@ -69,11 +90,12 @@ const Tooltip: React.FC<TooltipProps> = ({ title, description, example, children
 
     const tooltipContent = (
         <div
+            ref={tooltipRef}
             className="fixed z-[9999] pointer-events-none"
             style={{
                 top: coords.top,
                 left: coords.left,
-                transform: `translate(-50%, ${position === 'top' ? '-100%' : '0'})`,
+                transform: `translate(calc(-50% + ${shift}px), ${position === 'top' ? '-100%' : '0'})`,
                 marginTop: position === 'bottom' ? '8px' : '0',
                 marginBottom: position === 'top' ? '8px' : '0',
                 minWidth: '200px',
@@ -106,7 +128,7 @@ const Tooltip: React.FC<TooltipProps> = ({ title, description, example, children
                     </div>
                 )}
 
-                {/* Arrow */}
+                {/* Arrow - Adjust position based on shift to keep pointing at target */}
                 <div
                     className={`absolute left-1/2 -translate-x-1/2 w-0 h-0 ${position === 'top' ? 'top-full' : 'bottom-full'
                         }`}
@@ -114,6 +136,7 @@ const Tooltip: React.FC<TooltipProps> = ({ title, description, example, children
                         borderLeft: '6px solid transparent',
                         borderRight: '6px solid transparent',
                         [position === 'top' ? 'borderTop' : 'borderBottom']: '6px solid var(--border-primary)',
+                        transform: `translateX(${-shift}px)`
                     }}
                 />
                 {/* Arrow Inner (for border effect) */}
@@ -125,6 +148,7 @@ const Tooltip: React.FC<TooltipProps> = ({ title, description, example, children
                         borderRight: '5px solid transparent',
                         [position === 'top' ? 'borderTop' : 'borderBottom']: '5px solid var(--bg-primary)',
                         marginTop: position === 'top' ? '-1px' : '1px',
+                        transform: `translateX(${-shift}px)`
                     }}
                 />
             </div>
