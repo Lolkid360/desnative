@@ -158,7 +158,7 @@ func (a *App) GetAppVersion() string {
 func (a *App) CheckForUpdates(url string) (UpdateInfo, error) {
 	// Default URL if empty
 	if url == "" {
-		url = "https://desnative-updates.pages.dev/version.json"
+		url = "https://Lolkid360.github.io/desnative/version.json"
 	}
 
 	resp, err := http.Get(url)

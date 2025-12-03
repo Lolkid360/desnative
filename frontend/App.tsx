@@ -48,13 +48,22 @@ const App: React.FC = () => {
     // Check for updates on mount (every time)
     useEffect(() => {
         const checkUpdates = async () => {
-            if (!checkForUpdates) return;
+            if (!checkForUpdates) {
+                console.log("Update check disabled in settings");
+                return;
+            }
 
             try {
+                console.log("Checking for updates...");
                 const info = await (window as any).go?.main?.App?.CheckForUpdates("");
+                // console.log("Update info received:", info);
+
                 if (info && info.available) {
+                    // console.log("Update available, showing modal");
                     setUpdateInfo(info);
                     setShowUpdateModal(true);
+                } else {
+                    console.log("No update available");
                 }
             } catch (e) {
                 console.error("Failed to check for updates:", e);
