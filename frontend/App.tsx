@@ -45,25 +45,19 @@ const App: React.FC = () => {
         }
     }, []);
 
-    // Check for updates on mount (once per day)
+    // Check for updates on mount (every time)
     useEffect(() => {
         const checkUpdates = async () => {
             if (!checkForUpdates) return;
 
-            const lastCheck = localStorage.getItem('lastUpdateCheck');
-            const today = new Date().toDateString();
-
-            if (lastCheck !== today) {
-                try {
-                    const info = await (window as any).go?.main?.App?.CheckForUpdates("");
-                    if (info && info.available) {
-                        setUpdateInfo(info);
-                        setShowUpdateModal(true);
-                    }
-                    localStorage.setItem('lastUpdateCheck', today);
-                } catch (e) {
-                    console.error("Failed to check for updates:", e);
+            try {
+                const info = await (window as any).go?.main?.App?.CheckForUpdates("");
+                if (info && info.available) {
+                    setUpdateInfo(info);
+                    setShowUpdateModal(true);
                 }
+            } catch (e) {
+                console.error("Failed to check for updates:", e);
             }
         };
 
