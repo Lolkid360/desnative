@@ -26,8 +26,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
-            'math': ['mathjs']
+            'react-vendor': ['react', 'react-dom']
           }
         }
       }

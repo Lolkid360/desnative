@@ -3,12 +3,10 @@ import Display from './components/Display';
 import Keypad from './components/Keypad';
 import Button from './components/Button';
 import { AngleMode, TabMode, HistoryItem, ButtonVariant } from './types';
-import { evaluateExpression } from './services/mathService';
+// import { evaluateExpression } from './services/mathService'; // Lazy loaded
 import { RotateCcw, ArrowLeft, Settings } from 'lucide-react';
 import TitleBar from './components/TitleBar';
 import { useTheme } from './contexts/ThemeContext';
-// import SettingsModal from './components/SettingsModal'; // Removed for lazy loading
-// import UpdateModal from './components/UpdateModal'; // Removed for lazy loading
 
 // Lazy load modals
 const SettingsModal = React.lazy(() => import('./components/SettingsModal'));
@@ -41,8 +39,16 @@ const App: React.FC = () => {
     // Ref to the custom web component
     const mathFieldRef = useRef<any>(null);
 
-    // Load settings on mount
+    // Ref for the lazy-loaded math service
+    const mathServiceRef = useRef<any>(null);
+
+    // Load math service and settings on mount
     useEffect(() => {
+        // Lazy load math service
+        import('./services/mathService').then(module => {
+            mathServiceRef.current = module;
+        });
+
         const storedCheck = localStorage.getItem('checkForUpdates');
         if (storedCheck !== null) {
             setCheckForUpdates(JSON.parse(storedCheck));
@@ -154,6 +160,13 @@ const App: React.FC = () => {
             setLiveResult(null);
             return;
         }
+
+        if (!mathServiceRef.current) {
+            // Service not loaded yet, skip live preview or show loading?
+            // Just skip for now, it will load very fast.
+            return;
+        }
+
         try {
             // Get last result for Ans
             const lastResult = history.length > 0 && !history[history.length - 1].isError
@@ -161,7 +174,7 @@ const App: React.FC = () => {
                 : "0";
 
             // Use LaTeX for evaluation to support complex nested structures
-            const res = evaluateExpression(latex, angleMode, lastResult, outputFormat);
+            const res = mathServiceRef.current.evaluateExpression(latex, angleMode, lastResult, outputFormat);
             setLiveResult(res);
         } catch (e) {
             setLiveResult(null);
@@ -213,15 +226,21 @@ const App: React.FC = () => {
         let resultStr: string | null = null;
         let isError = false;
 
-        try {
-            // Get last result for Ans
-            const lastResult = history.length > 0 && !history[history.length - 1].isError
-                ? history[history.length - 1].result || "0"
-                : "0";
+        if (mathServiceRef.current) {
+            try {
+                // Get last result for Ans
+                const lastResult = history.length > 0 && !history[history.length - 1].isError
+                    ? history[history.length - 1].result || "0"
+                    : "0";
 
-            // Use LaTeX for evaluation
-            resultStr = evaluateExpression(latex, angleMode, lastResult, outputFormat);
-        } catch (e) {
+                // Use LaTeX for evaluation
+                resultStr = mathServiceRef.current.evaluateExpression(latex, angleMode, lastResult, outputFormat);
+            } catch (e) {
+                isError = true;
+            }
+        } else {
+            // Fallback if service not loaded (unlikely)
+            resultStr = "Loading...";
             isError = true;
         }
 
@@ -381,29 +400,31 @@ const App: React.FC = () => {
             </div>
 
             {/* Settings Modal */}
-            <SettingsModal
-                isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
-                theme={theme}
-                onThemeChange={setTheme}
-                outputFormat={outputFormat}
-                onOutputFormatChange={setOutputFormat}
-                onExport={handleExport}
-                onImport={handleImport}
-                checkForUpdates={checkForUpdates}
-                onCheckForUpdatesChange={(enabled) => {
-                    setCheckForUpdates(enabled);
-                    localStorage.setItem('checkForUpdates', JSON.stringify(enabled));
-                }}
-            />
+            <Suspense fallback={null}>
+                <SettingsModal
+                    isOpen={showSettings}
+                    onClose={() => setShowSettings(false)}
+                    theme={theme}
+                    onThemeChange={setTheme}
+                    outputFormat={outputFormat}
+                    onOutputFormatChange={setOutputFormat}
+                    onExport={handleExport}
+                    onImport={handleImport}
+                    checkForUpdates={checkForUpdates}
+                    onCheckForUpdatesChange={(enabled) => {
+                        setCheckForUpdates(enabled);
+                        localStorage.setItem('checkForUpdates', JSON.stringify(enabled));
+                    }}
+                />
 
-            {/* Update Modal */}
-            <UpdateModal
-                isOpen={showUpdateModal}
-                onClose={() => setShowUpdateModal(false)}
-                updateInfo={updateInfo}
-                onDownload={handleDownloadUpdate}
-            />
+                {/* Update Modal */}
+                <UpdateModal
+                    isOpen={showUpdateModal}
+                    onClose={() => setShowUpdateModal(false)}
+                    updateInfo={updateInfo}
+                    onDownload={handleDownloadUpdate}
+                />
+            </Suspense>
         </div>
     );
 };

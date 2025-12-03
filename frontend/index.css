@@ -128,3 +128,78 @@ math-field {
   user-select: text !important;
   cursor: text;
 }
+
+/* Styles moved from index.html */
+
+/* Custom Scrollbar for the expression list */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Hide number input spinner */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* MathField Customization to match Desmos */
+math-field {
+  width: 100%;
+  font-size: 1.875rem;
+  /* 3xl equivalent */
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  /* Selection and caret colors */
+  --caret-color: #2f72dc;
+  --selection-background-color: #cbdcfc;
+  /* Desmos light blue */
+  --selection-color: black;
+
+  /* Remove weird gray backgrounds */
+  --contains-highlight-background-color: transparent;
+  /* Fixed typo */
+  --contains-highlight-padding: 0px;
+
+  /* Placeholder styling */
+  --placeholder-color: #9ca3af;
+  --placeholder-opacity: 0.6;
+}
+
+:root.dark math-field {
+  --caret-color: #60a5fa;
+  --selection-background-color: #1e3a5f;
+  --selection-color: white;
+  --placeholder-color: #6b7280;
+}
+
+math-field::part(container) {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Hide the menu toggle and virtual keyboard toggle in math-field */
+math-field::part(menu-toggle),
+math-field::part(virtual-keyboard-toggle) {
+  display: none;
+}
+
+math-field:focus-within {
+  outline: none;
+}
