@@ -172,6 +172,9 @@ func (a *App) CheckForUpdates(url string) (UpdateInfo, error) {
 		return UpdateInfo{}, err
 	}
 
+	// Reset Available flag to false, we will determine it based on version comparison
+	info.Available = false
+
 	// Version comparison (Greater Than)
 	currentVersion := a.GetAppVersion()
 
