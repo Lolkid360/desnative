@@ -34,6 +34,8 @@ const App: React.FC = () => {
     const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
     const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
 
+    const [downloadComplete, setDownloadComplete] = useState<boolean>(false);
+
     // Ref to the custom web component
     const mathFieldRef = useRef<any>(null);
 
@@ -78,8 +80,9 @@ const App: React.FC = () => {
         if (!updateInfo) return;
         try {
             await (window as any).go?.main?.App?.DownloadUpdate(updateInfo.downloadUrl);
-            alert("Update downloaded to your Downloads folder. Please close the app and replace the executable.");
-            setShowUpdateModal(false);
+            setDownloadComplete(true);
+            // alert("Update downloaded to your Downloads folder. Please close the app and replace the executable.");
+            // setShowUpdateModal(false);
         } catch (e) {
             alert("Failed to download update: " + e);
         }
@@ -386,6 +389,7 @@ const App: React.FC = () => {
                 onClose={() => setShowUpdateModal(false)}
                 updateInfo={updateInfo}
                 onDownload={handleDownloadUpdate}
+                downloadComplete={downloadComplete}
             />
         </div>
     );
