@@ -150,7 +150,7 @@ type UpdateInfo struct {
 
 // GetAppVersion returns the current app version
 func (a *App) GetAppVersion() string {
-	return "111" // TODO: Read from build flags or config
+	return "112" // TODO: Read from build flags or config
 }
 
 // CheckForUpdates checks for updates from a remote JSON file
@@ -201,6 +201,7 @@ func (a *App) DownloadUpdate(url string) error {
 	runtime.BrowserOpenURL(a.ctx, url)
 	return nil
 }
+
 
 
 

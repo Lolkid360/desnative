@@ -7,10 +7,9 @@ import { AngleMode, TabMode, HistoryItem, ButtonVariant } from './types';
 import { RotateCcw, ArrowLeft, Settings } from 'lucide-react';
 import TitleBar from './components/TitleBar';
 import { useTheme } from './contexts/ThemeContext';
-
-// Lazy load modals
-const SettingsModal = React.lazy(() => import('./components/SettingsModal'));
-const UpdateModal = React.lazy(() => import('./components/UpdateModal'));
+import SettingsModal from './components/SettingsModal';
+import UpdateModal from './components/UpdateModal';
+import { CheckForUpdates, DownloadUpdate, SaveHistory, ExportHistory, ImportHistory } from './wailsjs/go/main/App';
 
 interface UpdateInfo {
     available: boolean;
@@ -78,7 +77,7 @@ const App: React.FC = () => {
 
             try {
                 console.log("Checking for updates...");
-                const info = await (window as any).go?.main?.App?.CheckForUpdates("");
+                const info = await CheckForUpdates("");
                 // console.log("Update info received:", info);
 
                 if (info && info.available) {
@@ -100,7 +99,7 @@ const App: React.FC = () => {
     const handleDownloadUpdate = async () => {
         if (!updateInfo) return;
         try {
-            await (window as any).go?.main?.App?.DownloadUpdate(updateInfo.downloadUrl);
+            await DownloadUpdate(updateInfo.downloadUrl);
             // Close modal after opening browser
             setShowUpdateModal(false);
         } catch (e) {
@@ -113,7 +112,7 @@ const App: React.FC = () => {
         const timer = setTimeout(() => {
             if (history.length > 0) {
                 const content = JSON.stringify(history);
-                (window as any).go?.main?.App?.SaveHistory(content);
+                SaveHistory(content);
             }
         }, 2000); // 2 second debounce
 
@@ -123,7 +122,7 @@ const App: React.FC = () => {
     const handleExport = async () => {
         const content = JSON.stringify(history, null, 2);
         try {
-            await (window as any).go?.main?.App?.ExportHistory(content);
+            await ExportHistory(content);
         } catch (e) {
             console.error('Export failed:', e);
         }
@@ -131,7 +130,7 @@ const App: React.FC = () => {
 
     const handleImport = async () => {
         try {
-            const content = await (window as any).go?.main?.App?.ImportHistory();
+            const content = await ImportHistory();
             if (content) {
                 const imported = JSON.parse(content) as HistoryItem[];
                 // Additive import - append to existing history
@@ -400,31 +399,29 @@ const App: React.FC = () => {
             </div>
 
             {/* Settings Modal */}
-            <Suspense fallback={null}>
-                <SettingsModal
-                    isOpen={showSettings}
-                    onClose={() => setShowSettings(false)}
-                    theme={theme}
-                    onThemeChange={setTheme}
-                    outputFormat={outputFormat}
-                    onOutputFormatChange={setOutputFormat}
-                    onExport={handleExport}
-                    onImport={handleImport}
-                    checkForUpdates={checkForUpdates}
-                    onCheckForUpdatesChange={(enabled) => {
-                        setCheckForUpdates(enabled);
-                        localStorage.setItem('checkForUpdates', JSON.stringify(enabled));
-                    }}
-                />
+            <SettingsModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+                theme={theme}
+                onThemeChange={setTheme}
+                outputFormat={outputFormat}
+                onOutputFormatChange={setOutputFormat}
+                onExport={handleExport}
+                onImport={handleImport}
+                checkForUpdates={checkForUpdates}
+                onCheckForUpdatesChange={(enabled) => {
+                    setCheckForUpdates(enabled);
+                    localStorage.setItem('checkForUpdates', JSON.stringify(enabled));
+                }}
+            />
 
-                {/* Update Modal */}
-                <UpdateModal
-                    isOpen={showUpdateModal}
-                    onClose={() => setShowUpdateModal(false)}
-                    updateInfo={updateInfo}
-                    onDownload={handleDownloadUpdate}
-                />
-            </Suspense>
+            {/* Update Modal */}
+            <UpdateModal
+                isOpen={showUpdateModal}
+                onClose={() => setShowUpdateModal(false)}
+                updateInfo={updateInfo}
+                onDownload={handleDownloadUpdate}
+            />
         </div>
     );
 };
