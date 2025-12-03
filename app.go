@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -135,4 +139,91 @@ func (a *App) ImportHistory() (string, error) {
 	}
 
 	return string(content), nil
+}
+
+// UpdateInfo struct
+type UpdateInfo struct {
+	Available    bool   `json:"available"`
+	Version      string `json:"version"`
+	DownloadURL  string `json:"downloadUrl"`
+	ReleaseNotes string `json:"releaseNotes"`
+}
+
+// GetAppVersion returns the current app version
+func (a *App) GetAppVersion() string {
+	return "100" // TODO: Read from build flags or config
+}
+
+// CheckForUpdates checks for updates from a remote JSON file
+func (a *App) CheckForUpdates(url string) (UpdateInfo, error) {
+	// Default URL if empty
+	if url == "" {
+		url = "https://desnative-updates.pages.dev/version.json"
+	}
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return UpdateInfo{}, err
+	}
+	defer resp.Body.Close()
+
+	var info UpdateInfo
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return UpdateInfo{}, err
+	}
+
+	// Version comparison (Greater Than)
+	currentVersion := a.GetAppVersion()
+
+	// Try integer comparison (e.g., "100" vs "101")
+	currInt, err1 := strconv.Atoi(currentVersion)
+	remoteInt, err2 := strconv.Atoi(info.Version)
+
+	if err1 == nil && err2 == nil {
+		if remoteInt > currInt {
+			info.Available = true
+		}
+	} else {
+		// Fallback for non-integer versions (e.g. "1.0.0")
+		// For now, just check if different, or implement semver later
+		if info.Version != currentVersion {
+			info.Available = true
+		}
+	}
+
+	return info, nil
+}
+
+// DownloadUpdate downloads the update file to the user's Downloads folder
+func (a *App) DownloadUpdate(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Get Downloads folder
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	downloadsDir := filepath.Join(homeDir, "Downloads")
+
+	// Create file
+	filename := filepath.Base(url)
+	// Ensure unique filename
+	destPath := filepath.Join(downloadsDir, filename)
+
+	out, err := os.Create(destPath)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return destPath, nil
 }

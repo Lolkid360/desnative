@@ -12,6 +12,8 @@ interface SettingsModalProps {
     onOutputFormatChange: (format: 'decimal' | 'fraction') => void;
     onExport: () => void;
     onImport: () => void;
+    checkForUpdates: boolean;
+    onCheckForUpdatesChange: (enabled: boolean) => void;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -22,7 +24,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     outputFormat,
     onOutputFormatChange,
     onExport,
-    onImport
+    onImport,
+    checkForUpdates,
+    onCheckForUpdatesChange
 }) => {
     if (!isOpen) return null;
 
@@ -121,7 +125,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* History */}
-                <div>
+                <div className="mb-6">
                     <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                         History
                     </label>
@@ -137,6 +141,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                             onClick={onImport}
                             className="flex-1 h-10"
                             variant={ButtonVariant.LIGHT}
+                        />
+                    </div>
+                </div>
+
+                {/* Updates */}
+                <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+                        Updates
+                    </label>
+                    <div className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+                        <span style={{ color: 'var(--text-primary)' }}>Check for updates automatically</span>
+                        <input
+                            type="checkbox"
+                            checked={checkForUpdates}
+                            onChange={(e) => onCheckForUpdatesChange(e.target.checked)}
+                            className="w-4 h-4"
                         />
                     </div>
                 </div>

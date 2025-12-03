@@ -8,6 +8,14 @@ import { RotateCcw, ArrowLeft, Settings } from 'lucide-react';
 import TitleBar from './components/TitleBar';
 import { useTheme } from './contexts/ThemeContext';
 import SettingsModal from './components/SettingsModal';
+import UpdateModal from './components/UpdateModal';
+
+interface UpdateInfo {
+    available: boolean;
+    version: string;
+    downloadUrl: string;
+    releaseNotes: string;
+}
 
 const App: React.FC = () => {
     const { theme, setTheme } = useTheme();
@@ -21,8 +29,58 @@ const App: React.FC = () => {
     const [showSettings, setShowSettings] = useState<boolean>(false);
     const [outputFormat, setOutputFormat] = useState<'decimal' | 'fraction'>('decimal');
 
+    // Update State
+    const [checkForUpdates, setCheckForUpdates] = useState<boolean>(true);
+    const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
+    const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+
     // Ref to the custom web component
     const mathFieldRef = useRef<any>(null);
+
+    // Load settings on mount
+    useEffect(() => {
+        const storedCheck = localStorage.getItem('checkForUpdates');
+        if (storedCheck !== null) {
+            setCheckForUpdates(JSON.parse(storedCheck));
+        }
+    }, []);
+
+    // Check for updates on mount (once per day)
+    useEffect(() => {
+        const checkUpdates = async () => {
+            if (!checkForUpdates) return;
+
+            const lastCheck = localStorage.getItem('lastUpdateCheck');
+            const today = new Date().toDateString();
+
+            if (lastCheck !== today) {
+                try {
+                    const info = await (window as any).go?.main?.App?.CheckForUpdates("");
+                    if (info && info.available) {
+                        setUpdateInfo(info);
+                        setShowUpdateModal(true);
+                    }
+                    localStorage.setItem('lastUpdateCheck', today);
+                } catch (e) {
+                    console.error("Failed to check for updates:", e);
+                }
+            }
+        };
+
+        // Small delay to ensure backend is ready
+        setTimeout(checkUpdates, 2000);
+    }, [checkForUpdates]);
+
+    const handleDownloadUpdate = async () => {
+        if (!updateInfo) return;
+        try {
+            await (window as any).go?.main?.App?.DownloadUpdate(updateInfo.downloadUrl);
+            alert("Update downloaded to your Downloads folder. Please close the app and replace the executable.");
+            setShowUpdateModal(false);
+        } catch (e) {
+            alert("Failed to download update: " + e);
+        }
+    };
 
     // Autosave history on change (debounced)
     useEffect(() => {
@@ -312,6 +370,19 @@ const App: React.FC = () => {
                 onOutputFormatChange={setOutputFormat}
                 onExport={handleExport}
                 onImport={handleImport}
+                checkForUpdates={checkForUpdates}
+                onCheckForUpdatesChange={(enabled) => {
+                    setCheckForUpdates(enabled);
+                    localStorage.setItem('checkForUpdates', JSON.stringify(enabled));
+                }}
+            />
+
+            {/* Update Modal */}
+            <UpdateModal
+                isOpen={showUpdateModal}
+                onClose={() => setShowUpdateModal(false)}
+                updateInfo={updateInfo}
+                onDownload={handleDownloadUpdate}
             />
         </div>
     );
