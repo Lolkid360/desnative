@@ -21,10 +21,36 @@ export const evaluateExpression = (
 
     let exprToEval = latex;
 
+    // Handle evaluation at a point: expr|_{var=value} or expr\bigm|_{var=value}
+    // Match pattern like: stuff|_{x=4} or stuff\bigm|_{x=4}
+    const evalAtMatch = latex.match(/^(.+?)(?:\\bigm)?\|_\{([a-zA-Z])\s*=\s*(.+?)\}$/);
+    let evalVar = "";
+    let evalVal: any = null;
+
+    if (evalAtMatch) {
+        exprToEval = evalAtMatch[1].trim(); // The expression before |
+        evalVar = evalAtMatch[2];           // The variable name
+        const valExpr = evalAtMatch[3];    // The value expression
+
+        try {
+            // Process and evaluate the value expression
+            let processedVal = valExpr
+                .replace(/\\cdot/g, '*')
+                .replace(/\\times/g, '*')
+                .replace(/\\pi/g, 'pi')
+                .replace(/π/g, 'pi');
+
+            evalVal = math.evaluate(processedVal);
+        } catch (e) {
+            console.error("Error evaluating point value:", e);
+            return null;
+        }
+    }
+
     // Check for variable substitution: "expression, var=value"
     // Regex: /^(.*),\s*([a-zA-Z])\s*=\s*(.+)$/
     // We handle this BEFORE other replacements to ensure we capture the structure
-    const subMatch = latex.match(/^(.*),\s*([a-zA-Z])\s*=\s*(.+)$/);
+    const subMatch = exprToEval.match(/^(.*),\s*([a-zA-Z])\s*=\s*(.+)$/);
     let subVar = "";
     let subVal: any = null;
 
@@ -52,10 +78,14 @@ export const evaluateExpression = (
 
     // 1. Basic Replacements (Global)
     exprToEval = exprToEval
+        .replace(/\\dfrac/g, '\\frac') // Convert \dfrac to \frac
         .replace(/\\cdot/g, '*')
         .replace(/\\times/g, '*')
         .replace(/\\pi/g, 'pi')
         .replace(/π/g, 'pi')
+        // Replace 'e' with 'E' for nerdamer (Euler's number), but only if it's a standalone 'e'
+        // Avoid replacing 'e' inside words like 'sin', 'sec', 'mean'
+        .replace(/\be\b/g, 'E')
         .replace(/\\sin/g, 'sin')
         .replace(/\\cos/g, 'cos')
         .replace(/\\tan/g, 'tan')
@@ -75,17 +105,54 @@ export const evaluateExpression = (
         // Calculus & Algebra
         // Simplify/Factor
         .replace(/simplify\(/g, 'simplify(')
-        .replace(/factor\(/g, 'factor(');
+        .replace(/factor\(/g, 'factor(')
+        // Combinatorics
+        .replace(/(\d+)\s*nPr\s*(\d+)/g, 'permutations($1, $2)')
+        .replace(/(\d+)\s*nCr\s*(\d+)/g, 'combinations($1, $2)');
+
+    // Summation: \sum_{n=1}^{5} n
+    exprToEval = exprToEval.replace(/\\sum_\{([a-zA-Z])=([^}]+)\}\^\{([^}]+)\}\s*(.+)/g, 'sum($4, $1, $2, $3)');
 
     // Handle Calculus: Integrals and Derivatives
     // We do this before other replacements to capture the structure
 
-    // Definite Integral: \int_{a}^{b} f(x) dx
-    // Regex allows for optional spaces, \mathrm{d}, and various spacers (\, \: \;)
-    exprToEval = exprToEval.replace(/\\int_\{([^}]+)\}\^\{([^}]+)\}\s*(.+?)\s*(?:\\,|\\:|\\;|\\s)*\\?(?:mathrm\{)?d\}?([a-z])/g, 'defint($3, $1, $2)');
+    // Definite Integral: \int_{a}^{b} f(x) dx (or without dx)
+    // Supports both braced _{...}^{...} and unbraced _a^b (single char)
 
-    // Indefinite Integral: \int f(x) dx
-    exprToEval = exprToEval.replace(/\\int\s*(.+?)\s*(?:\\,|\\:|\\;|\\s)*\\?(?:mathrm\{)?d\}?([a-z])/g, 'integrate($1)');
+    // First try with explicit dx
+    exprToEval = exprToEval.replace(/\\int(?:_\{([^}]+)\}|_([0-9a-zA-Z]))(?:\^\{([^}]+)\}|\^([0-9a-zA-Z]))\s*(.+?)\s*(?:\\,|\\:|\\;|\\s)*\\?(?:mathrm\{)?d\}?([a-z])\}?/g,
+        (match, l1, l2, u1, u2, expr, variable) => {
+            return `defint(${expr}, ${l1 || l2}, ${u1 || u2})`;
+        });
+
+    // Then handle without dx - assumes variable is x
+    exprToEval = exprToEval.replace(/\\int(?:_\{([^}]+)\}|_([0-9a-zA-Z]))(?:\^\{([^}]+)\}|\^([0-9a-zA-Z]))\s*(.+?)(?=\s*$|\s*[+\-*/^)])/g,
+        (match, l1, l2, u1, u2, expr) => {
+            return `defint(${expr}, ${l1 || l2}, ${u1 || u2})`;
+        });
+
+    // Indefinite Integral: \int f(x) dx (or without dx)  
+    // First try with explicit dx
+    exprToEval = exprToEval.replace(/\\int\s*(.+?)\s*(?:\\,|\\:|\\;|\\s)*\\?(?:mathrm\{)?d\}?([a-z])\}?/g, 'integrate($1, $2)');
+
+    // Then handle without dx - assumes variable is x
+    exprToEval = exprToEval.replace(/\\int\s+(.+?)(?=\s*$|\s*[+\-*/^)\|])/g, 'integrate($1, x)');
+
+    // Derivative with explicit order: \frac{d^n}{dx^n} f(x)
+    exprToEval = exprToEval.replace(/\\frac\s*\{\s*\\?(?:mathrm\{)?d\}?\s*\^\s*\{?(\d+)\}?\s*\}\s*\{\s*\\?(?:mathrm\{)?d\}?\s*([a-z])\s*\^\s*\{?(\d+)\}?\s*\}\s*\((.+?)\)/g,
+        (match, order1, variable, order2, expr) => {
+            if (order1 === order2) {
+                return `diff(${expr}, ${variable}, ${order1})`;
+            }
+            return match;
+        });
+    exprToEval = exprToEval.replace(/\\frac\s*\{\s*\\?(?:mathrm\{)?d\}?\s*\^\s*\{?(\d+)\}?\s*\}\s*\{\s*\\?(?:mathrm\{)?d\}?\s*([a-z])\s*\^\s*\{?(\d+)\}?\s*\}\s*(.+)/g,
+        (match, order1, variable, order2, expr) => {
+            if (order1 === order2) {
+                return `diff(${expr}, ${variable}, ${order1})`;
+            }
+            return match;
+        });
 
     // Derivative: \frac{d}{dx} f(x) or \frac{d}{dx}(f(x))
     // Handles \frac{d}{dx}, \frac{\mathrm{d}}{\mathrm{d}x}, spaces, etc.
@@ -163,8 +230,10 @@ export const evaluateExpression = (
     }
 
     // 4. Handle Implicit Multiplication
-    exprToEval = exprToEval.replace(/(\d)(sqrt|sin|cos|tan|log|ln|arcsin|arccos|arctan|nthRoot)/g, '$1*$2');
-    exprToEval = exprToEval.replace(/(\))(sqrt|sin|cos|tan|log|ln|arcsin|arccos|arctan|nthRoot)/g, '$1*$2');
+    // Be careful not to break functions (e.g. sin, cos)
+    // Only add * if the preceding char is a digit or closing paren
+    exprToEval = exprToEval.replace(/(\d)(sqrt|sin|cos|tan|log|ln|arcsin|arccos|arctan|nthRoot|E|pi)/g, '$1*$2');
+    exprToEval = exprToEval.replace(/(\))(sqrt|sin|cos|tan|log|ln|arcsin|arccos|arctan|nthRoot|E|pi)/g, '$1*$2');
     exprToEval = exprToEval.replace(/\)\(/g, ')*(');
     exprToEval = exprToEval.replace(/(\d)\(/g, '$1*(');
     exprToEval = exprToEval.replace(/\)(\d)/g, ')*$1');
@@ -174,7 +243,7 @@ export const evaluateExpression = (
 
     // 5. Equation Solving & Calculus (nerdamer)
     // Check if it's an equation (=) OR contains calculus/algebra functions
-    const isCalculusOrAlgebra = /defint|integrate|diff|simplify|factor/.test(exprToEval);
+    const isCalculusOrAlgebra = /defint|integrate|diff|simplify|factor|sum|roots/.test(exprToEval);
 
     if (exprToEval.indexOf('=') !== -1 || isCalculusOrAlgebra) {
         try {
@@ -190,11 +259,18 @@ export const evaluateExpression = (
             // If it's just a calculus/algebra expression (no =), evaluate it
             if (exprToEval.indexOf('=') === -1) {
                 const result = nerdamer(exprToSolve).evaluate();
-                const text = result.text();
+
+                // Apply evaluation at a point if specified
+                let finalResult = result;
+                if (evalVar && evalVal !== null) {
+                    finalResult = result.sub(evalVar, evalVal.toString()).evaluate();
+                }
+
+                const text = finalResult.text();
 
                 // For fraction mode, always return LaTeX
                 if (outputFormat === 'fraction') {
-                    return result.toTeX();
+                    return finalResult.toTeX();
                 }
 
                 // For decimal mode, try to format if it's a number
@@ -208,7 +284,7 @@ export const evaluateExpression = (
                 }
 
                 // If not a number, return LaTeX
-                return result.toTeX();
+                return finalResult.toTeX();
             }
 
             // Equation Solving Logic
@@ -272,6 +348,11 @@ export const evaluateExpression = (
     // Add substituted variable to scope
     if (subVar && subVal !== null) {
         scope[subVar] = subVal;
+    }
+
+    // Add evaluation variable to scope
+    if (evalVar && evalVal !== null) {
+        scope[evalVar] = evalVal;
     }
 
     // Trig overrides for Degree mode
@@ -340,9 +421,31 @@ export const evaluateExpression = (
         }
 
         return result.toString();
-    } catch (error) {
+    } catch (error: any) {
         console.error("Math evaluation error:", error);
-        throw error;
+
+        // Check for common unsupported features and provide helpful messages
+        if (exprToEval.includes('\\begin{pmatrix}') || exprToEval.includes('\\begin{bmatrix}') ||
+            exprToEval.includes('\\begin{matrix}') || exprToEval.includes('matrix')) {
+            throw new Error("Matrices not yet supported");
+        }
+        if (exprToEval.includes('\\begin{cases}')) {
+            throw new Error("Piecewise functions not yet supported");
+        }
+        if (exprToEval.includes('\\text{') || exprToEval.includes('\\mathrm{') ||
+            exprToEval.includes('\\mathbf{')) {
+            throw new Error("Text formatting not supported in calculations");
+        }
+        if (exprToEval.includes('\\prod')) {
+            throw new Error("Product notation not yet supported");
+        }
+        if (exprToEval.includes('\\lim')) {
+            throw new Error("Limits not yet supported");
+        }
+
+        // Generic error with the LaTeX that failed
+        const shortExpr = exprToEval.length > 50 ? exprToEval.substring(0, 50) + '...' : exprToEval;
+        throw new Error(`Cannot evaluate: ${shortExpr}`);
     }
 };
 
