@@ -1,16 +1,29 @@
 import React from 'react';
 import { ButtonVariant } from '../types';
 
+/**
+ * Props for the Button component.
+ */
 interface ButtonProps {
+  /** Text label for the button (used for aria-label) */
   label: string;
+  /** Click handler function */
   onClick: () => void;
+  /** Visual variant style */
   variant?: ButtonVariant;
+  /** Custom display content to render instead of label */
   display?: React.ReactNode;
+  /** Additional CSS classes */
   className?: string;
+  /** Whether the button is disabled */
   disabled?: boolean;
+  /** Inline styles */
   style?: React.CSSProperties;
+  /** Tooltip text */
   title?: string;
+  /** Mouse enter handler */
   onMouseEnter?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  /** Mouse leave handler */
   onMouseLeave?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
@@ -86,6 +99,10 @@ const Button: React.FC<ButtonProps> = ({
       style={{ ...variantStyles, ...style }}
       title={title}
       aria-label={label}
+      aria-disabled={disabled}
+      disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
+      type="button"
     >
       {display || label}
     </button>

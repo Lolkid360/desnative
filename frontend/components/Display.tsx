@@ -100,15 +100,19 @@ const Display: React.FC<DisplayProps> = ({
     };
 
     // Initial focus with delay
-    setTimeout(focusInput, 1000);
-
+    // Initial focus - try immediately and with short delays
+    focusInput(); // Try immediately
+    setTimeout(focusInput, 50);
+    setTimeout(focusInput, 150);
+    setTimeout(focusInput, 300);
     // Also focus when window becomes focused
     window.addEventListener('focus', handleWindowFocus);
 
     return () => {
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, []);
+    // Note: mathFieldRef is a stable ref, but including it documents the dependency
+  }, [mathFieldRef]);
 
   return (
     <div className="flex-1 flex flex-col border-b min-h-0" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
@@ -145,7 +149,9 @@ const Display: React.FC<DisplayProps> = ({
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
-                  navigator.clipboard.writeText(item.expression);
+                  navigator.clipboard.writeText(item.expression).then(() => {
+                    setTimeout(() => mathFieldRef.current?.focus(), 10);
+                  }).catch(err => console.error('Failed to copy:', err));
                 }}
                 title="Click to insert, Right-click to copy"
               >
@@ -191,7 +197,9 @@ const Display: React.FC<DisplayProps> = ({
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault();
-                      navigator.clipboard.writeText(item.result || "");
+                      navigator.clipboard.writeText(item.result || "").then(() => {
+                        setTimeout(() => mathFieldRef.current?.focus(), 10);
+                      }).catch(err => console.error('Failed to copy:', err));
                     }}
                     title="Click to insert, Right-click to copy"
                   >

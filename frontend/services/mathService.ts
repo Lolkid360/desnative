@@ -1,21 +1,31 @@
-import { create, all } from 'mathjs';
-import { AngleMode } from '../types';
+﻿import { create, all } from 'mathjs';
+import { AngleMode, OutputFormat } from '../types';
 import nerdamer from 'nerdamer';
 import 'nerdamer/Algebra';
 import 'nerdamer/Calculus';
 import 'nerdamer/Solve';
 
+// Create a math.js instance with all functions available
 const math = create(all);
 
-// Configure math.js
-// Default configuration (number: 'number') is used to avoid type errors with mixed types (Fraction/BigNumber)
-// and to ensure decimal output as requested by user.
+// Configuration note:
+// Default configuration (number: 'number') is used to avoid type errors 
+// with mixed types (Fraction/BigNumber) and to ensure decimal output.
+
+/** Maximum iterations for recursive parsing loops (prevents infinite loops) */
+const MAX_PARSE_ITERATIONS = 100;
+
+/** Precision for floating point number formatting */
+const DECIMAL_PRECISION = 5;
+
+/** Epsilon for integer detection */
+const INTEGER_EPSILON = 1e-10;
 
 export const evaluateExpression = (
     latex: string,
     angleMode: AngleMode,
     previousAnswer: string = "0",
-    outputFormat: 'decimal' | 'fraction' = 'decimal'
+    outputFormat: OutputFormat = 'decimal'
 ): string | null => {
     if (!latex || !latex.trim()) return null;
 
@@ -30,20 +40,27 @@ export const evaluateExpression = (
     if (evalAtMatch) {
         exprToEval = evalAtMatch[1].trim(); // The expression before |
         evalVar = evalAtMatch[2];           // The variable name
-        const valExpr = evalAtMatch[3];    // The value expression
+        const valExpr = evalAtMatch[3].trim();    // The value expression
 
-        try {
-            // Process and evaluate the value expression
-            let processedVal = valExpr
-                .replace(/\\cdot/g, '*')
-                .replace(/\\times/g, '*')
-                .replace(/\\pi/g, 'pi')
-                .replace(/π/g, 'pi');
+        // Special case: if var=var (e.g., x=x), it means "show symbolic result"
+        // Don't try to evaluate, just set evalVal to null to skip substitution
+        if (valExpr === evalVar) {
+            evalVal = null;
+            evalVar = ""; // Clear to prevent substitution later
+        } else {
+            try {
+                // Process and evaluate the value expression
+                let processedVal = valExpr
+                    .replace(/\\cdot/g, '*')
+                    .replace(/\\times/g, '*')
+                    .replace(/\\pi/g, 'pi')
+                    .replace(/π/g, 'pi');
 
-            evalVal = math.evaluate(processedVal);
-        } catch (e) {
-            console.error("Error evaluating point value:", e);
-            return null;
+                evalVal = math.evaluate(processedVal);
+            } catch (e) {
+                console.error("Error evaluating point value:", e);
+                return null;
+            }
         }
     }
 
@@ -138,7 +155,17 @@ export const evaluateExpression = (
     // Then handle without dx - assumes variable is x
     exprToEval = exprToEval.replace(/\\int\s+(.+?)(?=\s*$|\s*[+\-*/^)\|])/g, 'integrate($1, x)');
 
-    // Derivative with explicit order: \frac{d^n}{dx^n} f(x)
+    // Derivative with explicit order: \frac{d^n}{dx^n} f(x) or \frac{\mathrm{d}^n}{\mathrm{d}x^n} f(x)
+    // Pattern for \frac{\mathrm{d}^n}{\mathrm{d}x^n} format
+    exprToEval = exprToEval.replace(/\\frac\s*\{\s*\\mathrm\{d\}\s*\^\s*\{?(\d+)\}?\s*\}\s*\{\s*\\mathrm\{d\}\s*([a-z])\s*\^\s*\{?(\d+)\}?\s*\}\s*(.+?)(?=\s*$|\s*[+\-|]|\s*\\bigm)/g,
+        (match, order1, variable, order2, expr) => {
+            if (order1 === order2) {
+                return `diff(${expr.trim()}, ${variable}, ${order1})`; 
+            }
+            return match;
+        });
+
+    // Pattern for \frac{d^n}{dx^n} format
     exprToEval = exprToEval.replace(/\\frac\s*\{\s*\\?(?:mathrm\{)?d\}?\s*\^\s*\{?(\d+)\}?\s*\}\s*\{\s*\\?(?:mathrm\{)?d\}?\s*([a-z])\s*\^\s*\{?(\d+)\}?\s*\}\s*\((.+?)\)/g,
         (match, order1, variable, order2, expr) => {
             if (order1 === order2) {
@@ -166,9 +193,8 @@ export const evaluateExpression = (
 
     // 3. Recursive Parser for Containers (\frac, \sqrt, ^{})
     let loopCount = 0;
-    const maxLoops = 100; // Safety break
 
-    while (loopCount < maxLoops) {
+    while (loopCount < MAX_PARSE_ITERATIONS) {
         let changed = false;
 
         // Handle \frac{num}{den}
@@ -487,11 +513,10 @@ const applyInverseTrig = (mathFn: Function, x: any, mode: AngleMode) => {
 };
 
 const formatNumber = (num: number): string => {
-    const precision = 5;
     // Check if it's an integer within epsilon
-    if (Math.abs(num - Math.round(num)) < 1e-10) {
+    if (Math.abs(num - Math.round(num)) < INTEGER_EPSILON) {
         return Math.round(num).toString();
     }
     // Remove trailing zeros
-    return parseFloat(num.toFixed(precision)).toString();
+    return parseFloat(num.toFixed(DECIMAL_PRECISION)).toString();
 };

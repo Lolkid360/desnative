@@ -53,18 +53,24 @@ const App: React.FC = () => {
             setCheckForUpdates(JSON.parse(storedCheck));
         }
 
-        // Aggressive auto-focus
+        // Aggressive auto-focus - keep trying until successful
         const focusInterval = setInterval(() => {
             if (mathFieldRef.current) {
                 mathFieldRef.current.focus();
-                // console.log("Attempting focus...");
+                // Check if focus was successful
+                if (document.activeElement === mathFieldRef.current || 
+                    mathFieldRef.current.contains(document.activeElement)) {
+                    clearInterval(focusInterval);
+                }
             }
-        }, 100);
+        }, 50); // Check more frequently
 
-        // Stop attempting after 2 seconds
+        // Stop attempting after 3 seconds as fallback
         setTimeout(() => {
             clearInterval(focusInterval);
-        }, 2000);
+            // Final focus attempt
+            mathFieldRef.current?.focus();
+        }, 3000);
     }, []);
 
     // Check for updates on mount (every time)
@@ -132,7 +138,26 @@ const App: React.FC = () => {
         try {
             const content = await ImportHistory();
             if (content) {
-                const imported = JSON.parse(content) as HistoryItem[];
+                const parsed = JSON.parse(content);
+
+                // Validate that parsed data is an array
+                if (!Array.isArray(parsed)) {
+                    console.error('Import failed: Invalid format - expected array');
+                    return;
+                }
+
+                // Validate and sanitize each item
+                const imported = parsed.filter((item: unknown): item is HistoryItem => {
+                    if (typeof item !== 'object' || item === null) return false;
+                    const obj = item as Record<string, unknown>;
+                    return (
+                        typeof obj.id === 'string' &&
+                        typeof obj.expression === 'string' &&
+                        (obj.result === null || typeof obj.result === 'string') &&
+                        typeof obj.isError === 'boolean'
+                    );
+                });
+
                 // Additive import - append to existing history
                 setHistory(prev => [...prev, ...imported]);
             }
@@ -182,7 +207,12 @@ const App: React.FC = () => {
 
     // Recalculate live result when angle mode or output format changes
     useEffect(() => {
-        handleInput();
+        // Only trigger if we have an expression
+        const { latex } = getValues();
+        if (latex && latex.trim()) {
+            handleInput();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [angleMode, outputFormat]);
 
     const handleCommand = (command: string, arg?: string) => {

@@ -1,9 +1,10 @@
+// Package main provides the Desnative Calculator application.
+// This is a Wails-based desktop calculator with LaTeX support.
 package main
 
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,13 +15,27 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// App struct
+// Application configuration constants
+const (
+	// maxHistoryFiles is the maximum number of history backup files to keep
+	maxHistoryFiles = 5
+
+	// historyDirName is the subdirectory name for storing history files
+	historyDirName = "history"
+
+	// appDirName is the application configuration directory name
+	appDirName = ".desnative"
+)
+
+// App represents the main application structure.
+// It holds the application context and state that needs to persist
+// across method calls from the frontend.
 type App struct {
 	ctx         context.Context
 	alwaysOnTop bool
 }
 
-// NewApp creates a new App application struct
+// NewApp creates and returns a new App instance with default values.
 func NewApp() *App {
 	return &App{}
 }
@@ -53,7 +68,7 @@ func (a *App) SaveHistory(content string) error {
 	}
 
 	// Create history directory
-	historyDir := filepath.Join(homeDir, ".desnative", "history")
+	historyDir := filepath.Join(homeDir, appDirName, historyDirName)
 	if err := os.MkdirAll(historyDir, 0755); err != nil {
 		return err
 	}
@@ -63,32 +78,43 @@ func (a *App) SaveHistory(content string) error {
 	filename := filepath.Join(historyDir, "history_"+timestamp+".json")
 
 	// Write file
-	if err := ioutil.WriteFile(filename, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
 		return err
 	}
 
 	// Clean up old files (keep only last 5)
-	files, err := ioutil.ReadDir(historyDir)
+	entries, err := os.ReadDir(historyDir)
 	if err != nil {
 		return err
 	}
 
-	// Filter only history files
-	var historyFiles []os.FileInfo
-	for _, f := range files {
-		if !f.IsDir() && filepath.Ext(f.Name()) == ".json" {
-			historyFiles = append(historyFiles, f)
+	// Filter only history files and get FileInfo for sorting
+	type fileWithInfo struct {
+		name    string
+		modTime time.Time
+	}
+	var historyFiles []fileWithInfo
+	for _, entry := range entries {
+		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".json" {
+			info, err := entry.Info()
+			if err != nil {
+				continue // Skip files we can't stat
+			}
+			historyFiles = append(historyFiles, fileWithInfo{
+				name:    entry.Name(),
+				modTime: info.ModTime(),
+			})
 		}
 	}
 
 	// Sort by modification time (newest first)
 	sort.Slice(historyFiles, func(i, j int) bool {
-		return historyFiles[i].ModTime().After(historyFiles[j].ModTime())
+		return historyFiles[i].modTime.After(historyFiles[j].modTime)
 	})
 
-	// Delete files beyond the 5th
-	for i := 5; i < len(historyFiles); i++ {
-		os.Remove(filepath.Join(historyDir, historyFiles[i].Name()))
+	// Delete files beyond the configured limit
+	for i := maxHistoryFiles; i < len(historyFiles); i++ {
+		_ = os.Remove(filepath.Join(historyDir, historyFiles[i].name))
 	}
 
 	return nil
@@ -112,7 +138,7 @@ func (a *App) ExportHistory(content string) error {
 		return nil // User cancelled
 	}
 
-	return ioutil.WriteFile(filename, []byte(content), 0644)
+	return os.WriteFile(filename, []byte(content), 0644)
 }
 
 // ImportHistory opens a file dialog and returns the content
@@ -132,7 +158,7 @@ func (a *App) ImportHistory() (string, error) {
 		return "", nil // User cancelled
 	}
 
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
@@ -201,11 +227,3 @@ func (a *App) DownloadUpdate(url string) error {
 	runtime.BrowserOpenURL(a.ctx, url)
 	return nil
 }
-
-
-
-
-
-
-
-

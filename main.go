@@ -28,10 +28,9 @@ func main() {
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)
-			// Ensure window is shown and focused on startup
+			// Ensure window is shown on startup
 			runtime.WindowShow(ctx)
 			runtime.WindowSetAlwaysOnTop(ctx, false)
-			runtime.WindowSetAlwaysOnTop(ctx, false) // Double call to ensure focus
 		},
 		Frameless: true,
 		Bind: []interface{}{
