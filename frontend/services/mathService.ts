@@ -139,13 +139,13 @@ export const evaluateExpression = (
     // First try with explicit dx
     exprToEval = exprToEval.replace(/\\int(?:_\{([^}]+)\}|_([0-9a-zA-Z]))(?:\^\{([^}]+)\}|\^([0-9a-zA-Z]))\s*(.+?)\s*(?:\\,|\\:|\\;|\\s)*\\?(?:mathrm\{)?d\}?([a-z])\}?/g,
         (match, l1, l2, u1, u2, expr, variable) => {
-            return `defint(${expr}, ${l1 || l2}, ${u1 || u2})`;
+            return `defint(${expr}, ${l1 || l2}, ${u1 || u2}, ${variable})`;
         });
 
     // Then handle without dx - assumes variable is x
-    exprToEval = exprToEval.replace(/\\int(?:_\{([^}]+)\}|_([0-9a-zA-Z]))(?:\^\{([^}]+)\}|\^([0-9a-zA-Z]))\s*(.+?)(?=\s*$|\s*[+\-*/^)])/g,
+    exprToEval = exprToEval.replace(/\\int(?:_\{([^}]+)\}|_([0-9a-zA-Z]))(?:\^\{([^}]+)\}|\^([0-9a-zA-Z]))\s*(.+?)(?=\s*$|\s*[)\]|])/g,
         (match, l1, l2, u1, u2, expr) => {
-            return `defint(${expr}, ${l1 || l2}, ${u1 || u2})`;
+            return `defint(${expr}, ${l1 || l2}, ${u1 || u2}, x)`;
         });
 
     // Indefinite Integral: \int f(x) dx (or without dx)  
@@ -153,14 +153,14 @@ export const evaluateExpression = (
     exprToEval = exprToEval.replace(/\\int\s*(.+?)\s*(?:\\,|\\:|\\;|\\s)*\\?(?:mathrm\{)?d\}?([a-z])\}?/g, 'integrate($1, $2)');
 
     // Then handle without dx - assumes variable is x
-    exprToEval = exprToEval.replace(/\\int\s+(.+?)(?=\s*$|\s*[+\-*/^)\|])/g, 'integrate($1, x)');
+    exprToEval = exprToEval.replace(/\\int\s*(.+?)(?=\s*$|\s*[)\]|])/g, 'integrate($1, x)');
 
     // Derivative with explicit order: \frac{d^n}{dx^n} f(x) or \frac{\mathrm{d}^n}{\mathrm{d}x^n} f(x)
     // Pattern for \frac{\mathrm{d}^n}{\mathrm{d}x^n} format
     exprToEval = exprToEval.replace(/\\frac\s*\{\s*\\mathrm\{d\}\s*\^\s*\{?(\d+)\}?\s*\}\s*\{\s*\\mathrm\{d\}\s*([a-z])\s*\^\s*\{?(\d+)\}?\s*\}\s*(.+?)(?=\s*$|\s*[+\-|]|\s*\\bigm)/g,
         (match, order1, variable, order2, expr) => {
             if (order1 === order2) {
-                return `diff(${expr.trim()}, ${variable}, ${order1})`; 
+                return `diff(${expr.trim()}, ${variable}, ${order1})`;
             }
             return match;
         });

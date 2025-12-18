@@ -227,3 +227,4 @@ func (a *App) DownloadUpdate(url string) error {
 	runtime.BrowserOpenURL(a.ctx, url)
 	return nil
 }
+
